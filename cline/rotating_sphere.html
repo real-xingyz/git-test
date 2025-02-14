@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rotating Sphere</title>
+    <style>
+        body { margin: 0; background-color: black; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="sphereCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('sphereCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const sphereRadius = 200;
+        const rotationSpeedX = 0.01;
+        const rotationSpeedY = 0.01;
+        let rotationX = 0;
+        let rotationY = 0;
+        const textColor = '#00ff00'; // Code rain green
+        const text = '2046';
+
+        function drawSphere() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const points = [];
+            const numPoints = 200; // Adjust for point density
+
+            for (let i = 0; i < numPoints; i++) {
+                const phi = Math.acos(-1 + (2 * i) / numPoints);
+                const theta = Math.sqrt(numPoints * Math.PI) * phi;
+                const x = Math.cos(theta) * Math.sin(phi);
+                const y = Math.sin(theta) * Math.sin(phi);
+                const z = Math.cos(phi);
+                points.push({ x, y, z });
+            }
+
+            points.forEach((point, index) => {
+                // Rotate points
+                let rotatedX = point.x * Math.cos(rotationX) - point.z * Math.sin(rotationX);
+                let rotatedZ = point.x * Math.sin(rotationX) + point.z * Math.cos(rotationX);
+                point.x = rotatedX;
+                point.z = rotatedZ;
+
+                let rotatedY = point.y * Math.cos(rotationY) - point.z * Math.sin(rotationY);
+                rotatedZ = point.y * Math.sin(rotationY) + point.z * Math.cos(rotationY);
+                point.y = rotatedY;
+                point.z = rotatedZ;
+
+
+                // Project to 2D
+                const perspective = 500;
+                const scale = perspective / (perspective + point.z * sphereRadius);
+                const x2d = canvas.width / 2 + point.x * sphereRadius * scale;
+                const y2d = canvas.height / 2 + point.y * sphereRadius * scale;
+
+                ctx.fillStyle = textColor;
+                ctx.font = `${12 * scale}px monospace`; // Adjust font size with scale
+                const digit = text[index % text.length];
+                ctx.fillText(digit, x2d, y2d);
+            });
+
+            rotationX += rotationSpeedX;
+            rotationY += rotationSpeedY;
+            requestAnimationFrame(drawSphere);
+        }
+
+        drawSphere();
+    </script>
+</body>
+</html>
