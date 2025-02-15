@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>旋转的2046球体</title>
+<style>
+body {
+ margin: 0;
+ overflow: hidden; /* 防止滚动条 */
+ background-color: black; /* 黑色背景 */
+}
+
+canvas {
+ display: block;
+}
+</style>
+</head>
+<body>
+
+<canvas id="sphereCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('sphereCanvas');
+const ctx = canvas.getContext('2d');
+
+// 设置画布尺寸
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// 全局变量
+const numPoints = 500; // 点的数量，越多越密集
+const sphereRadius = 200; // 球体半径
+const fontSize = 14; // 字体大小
+const fontColor = '#00FF00'; // 代码雨绿色
+const text = "2046";
+const rotationSpeedX = 0.002; // X轴旋转速度
+const rotationSpeedY = 0.003; // Y轴旋转速度
+
+let points = [];
+let angleX = 0;
+let angleY = 0;
+
+// 初始化点的位置 (球面上)
+function initializePoints() {
+ points = [];
+ for (let i = 0; i < numPoints; i++) {
+   const u = Math.random(); // 0-1
+   const v = Math.random(); // 0-1
+
+   const theta = 2 * Math.PI * u; // 经度
+   const phi = Math.acos(2 * v - 1); // 纬度
+
+   const x = sphereRadius * Math.sin(phi) * Math.cos(theta);
+   const y = sphereRadius * Math.sin(phi) * Math.sin(theta);
+   const z = sphereRadius * Math.cos(phi);
+
+   points.push({ x, y, z });
+ }
+}
+
+// 旋转点
+function rotatePoint(point, angleX, angleY) {
+ // Rotate around Y axis
+ let x = point.x;
+ let z = point.z;
+ let rotatedX = x * Math.cos(angleY) - z * Math.sin(angleY);
+ let rotatedZ = x * Math.sin(angleY) + z * Math.cos(angleY);
+
+ // Rotate around X axis
+ let y = point.y;
+ z = rotatedZ; // Use rotatedZ from previous step
+ let rotatedY = y * Math.cos(angleX) - z * Math.sin(angleX);
+ rotatedZ = y * Math.sin(angleX) + z * Math.cos(angleX);
+
+ return { x: rotatedX, y: rotatedY, z: rotatedZ };
+}
+
+// 将3D点投影到2D
+function projectPoint(x, y, z) {
+ const focalLength = 300; // 调整透视效果
+ const perspective = focalLength / (focalLength + z);
+ const screenX = x * perspective + canvas.width / 2;
+ const screenY = y * perspective + canvas.height / 2;
+ return { x: screenX, y: screenY, scale: perspective }; // 添加 scale 用于控制字体大小
+}
+
+// 绘制
+function draw() {
+ ctx.clearRect(0, 0, canvas.width, canvas.height); // 清空画布
+
+ for (let i = 0; i < points.length; i++) {
+   const rotatedPoint = rotatePoint(points[i], angleX, angleY);
+   const projectedPoint = projectPoint(rotatedPoint.x, rotatedPoint.y, rotatedPoint.z);
+
+   // 仅当点在视线范围内时才绘制
+   if (projectedPoint.scale > 0) {
+     ctx.font = `${fontSize * projectedPoint.scale}px monospace`; // 根据scale调整字体大小，保持近大远小
+     ctx.fillStyle = fontColor;
+
+     // 计算文本位置
+     const textIndex = i % text.length; // 循环使用 "2046"
+     const char = text[textIndex];
+     ctx.fillText(char, projectedPoint.x, projectedPoint.y);
+   }
+ }
+
+ // 更新旋转角度
+ angleX += rotationSpeedX;
+ angleY += rotationSpeedY;
+
+ requestAnimationFrame(draw); // 动画循环
+}
+
+// 初始化和启动
+initializePoints();
+draw();
+
+// 窗口大小调整事件
+window.addEventListener('resize', () => {
+ canvas.width = window.innerWidth;
+ canvas.height = window.innerHeight;
+ initializePoints(); // 重新初始化点，保证在新的画布尺寸下正确分布
+});
+</script>
+
+</body>
+</html>
